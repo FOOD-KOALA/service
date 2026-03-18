@@ -1,0 +1,35 @@
+### 1. POST: Creeaza o comanda noua (Folosind Request-ul)
+POST http://localhost:8080/api/orders
+Content-Type: application/json
+
+{
+    "customerId": "user123",
+    "restaurantId": "rest99",
+    "items": ["Sushi Box", "Sos Soia"],
+    "totalPrice": 45.00
+}
+
+### 2. GET: Aduce istoricul unui client (Foloseste customerId-ul de mai sus)
+GET http://localhost:8080/api/orders/customer/user123
+
+### 3. GET: Aduce o comanda specifica (Inlocuieste ID_AICI cu ID-ul primit la pasul 1)
+GET http://localhost:8080/api/orders/ID_AICI
+
+### 4. PATCH: Modifica statusul comenzii (Folosind Request-ul)
+PATCH http://localhost:8080/api/orders/ID_AICI/status
+Content-Type: application/json
+
+{
+    "status": "PREPARING"
+}
+
+### 5. VALIDARE (Demonstratie pt. profesor - Pret prea mic)
+POST http://localhost:8080/api/orders
+Content-Type: application/json
+
+{
+    "customerId": "user123",
+    "restaurantId": "rest99",
+    "items": ["Apa"],
+    "totalPrice": 5.00
+}
