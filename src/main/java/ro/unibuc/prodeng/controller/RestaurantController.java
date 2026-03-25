@@ -2,6 +2,7 @@ package ro.unibuc.prodeng.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
@@ -23,19 +24,19 @@ public class RestaurantController {
     }
 
     @GetMapping("/{id}")
-    public RestaurantResponse getById(@PathVariable String id) {
+    public RestaurantResponse getById(@PathVariable @NonNull String id) {
         return restaurantService.getById(id);
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public RestaurantResponse create(@Valid @RequestBody RestaurantResponse restaurant) {
+    public RestaurantResponse create(@Valid @RequestBody @NonNull RestaurantResponse restaurant) {
         return restaurantService.create(restaurant);
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable String id) {
+    public void delete(@PathVariable @NonNull String id) {
         restaurantService.delete(id);
     }
 }
