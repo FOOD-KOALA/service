@@ -61,6 +61,7 @@ class TodoControllerIntegrationTest extends IntegrationTestBase {
 
         return objectMapper.readTree(response).get("id").asText();
     }
+    // Verific ca un todo creat poate fi regasit dupa id cu toate campurile corecte
 
     @Test
     void testCreateAndGetTodo_validTodoCreation_retrievesTodoSuccessfully() throws Exception {
@@ -76,7 +77,7 @@ class TodoControllerIntegrationTest extends IntegrationTestBase {
                 .andExpect(jsonPath("$.assigneeName").value("Alice"))
                 .andExpect(jsonPath("$.assigneeEmail").value("alice@example.com"));
     }
-
+// Verific ca filtrarea dupa email returneaza doar todo-urile userului respectiv
     @Test
     void testGetTodosByUser_multipleUsersWithDifferentTodos_filtersCorrectly() throws Exception {
         // Arrange
@@ -95,7 +96,7 @@ class TodoControllerIntegrationTest extends IntegrationTestBase {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1));
     }
-
+// Verific ca statusul done poate fi schimbat din true in false si invers
     @Test
     void testSetDone_toggleDoneStatus_updatesStatusCorrectly() throws Exception {
         // Arrange
@@ -115,7 +116,7 @@ class TodoControllerIntegrationTest extends IntegrationTestBase {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.done").value(false));
     }
-
+// Verific ca un todo poate fi reasignat de la un user la altul
     @Test
     void testAssign_reassignToDifferentUser_updateAssigneeSuccessfully() throws Exception {
         // Arrange
@@ -131,7 +132,7 @@ class TodoControllerIntegrationTest extends IntegrationTestBase {
                 .andExpect(jsonPath("$.assigneeName").value("Bob"))
                 .andExpect(jsonPath("$.assigneeEmail").value("bob@example.com"));
     }
-
+// Verific ca descrierea unui todo poate fi modificata cu succes
     @Test
     void testEditDescription_validNewDescription_updatesDescriptionSuccessfully() throws Exception {
         // Arrange
@@ -145,7 +146,7 @@ class TodoControllerIntegrationTest extends IntegrationTestBase {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.description").value("Buy oat milk"));
     }
-
+// Verific ca dupa stergere todo-ul nu mai apare in lista userului
     @Test
     void testDeleteTodo_existingTodo_deletesSuccessfully() throws Exception {
         // Arrange
