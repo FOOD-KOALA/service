@@ -1,13 +1,55 @@
 pipeline {
     agent any
+
+    // Cerință: Gradle 8 și JDK 21
+    tools {
+        jdk 'JDK 21'
+        gradle 'Gradle 8'
+    }
+
     environment {
+        // SCHIMBĂ AICI CU USER-UL TĂU DE DOCKER HUB
+        DOCKER_USER = 'iustinnc' 
+        
+        // ID-ul credențialului creat de tine în Jenkins
         DOCKER_PASSWORD = credentials("docker_password")
+        
+        IMAGE_NAME = 'food-koala-service'
+        TAG_NAME = "v1.0.${env.BUILD_NUMBER}"
     }
 
     stages {
         stage('Build & Test') {
             steps {
-                sh './gradlew clean build'
+                echo '=== Compilam si Testam ==='
+                sh 'chmod +x gradlew'
+                sh './gradlew clean build jacocoTestReport'
+            }
+        }
+
+        stage('Build & Push Docker Image') {
+            steps {
+                echo '=== Construim si urcam imaginea pe Docker Hub ==='
+                sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USER --password-stdin'
+                sh "docker build -t ${DOCKER_USER}/${IMAGE_NAME}:${TAG_NAME} ."
+                sh "docker push ${DOCKER_USER}/${IMAGE_NAME}:${TAG_NAME}"
+            }
+        }
+
+        stage('Create Git Tag') {
+            steps {
+                echo '=== Cream un tag pe GitHub ==='
+                script {
+                    // ID-ul credențialului Secret Text creat de tine
+                    withCredentials([string(credentialsId: 'github_token', variable: 'GIT_TOKEN')]) {
+                        sh """
+                            git config user.email "jenkins@foodkoala.com"
+                            git config user.name "Jenkins CI"
+                            git tag -a ${TAG_NAME} -m "Release ${TAG_NAME}"
+                            git push https://${GIT_TOKEN}@github.com/FOOD-KOALA/service.git ${TAG_NAME}
+                        """
+                    }
+                }
             }
         }
     }
