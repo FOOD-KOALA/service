@@ -3,8 +3,8 @@ pipeline {
 
     // Cerință: Gradle 8 și JDK 21
     tools {
-        jdk 'JDK 21'
-        gradle 'Gradle 8'
+        jdk 'jdk21'
+        gradle 'gradle-8'
     }
 
     environment {
