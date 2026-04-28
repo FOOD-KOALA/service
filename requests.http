@@ -98,3 +98,23 @@ DELETE http://localhost:8080/api/todos/{{createTodo.response.body.id}}
 
 ### Delete user
 DELETE http://localhost:8080/api/users/{{createUser.response.body.id}}
+# ==========================================
+# Menu Controller Endpoints (Task-ul tău)
+# ==========================================
+
+### 1. Creează un meniu nou
+# @name createMenu
+POST http://localhost:8080/api/menus
+Content-Type: application/json
+
+{
+    "name": "Meniu Burger Clasic",
+    "description": "Burger de vita cu cartofi prajiti si sos",
+    "price": 45.50
+}
+
+### 2. Vezi toate meniurile
+GET http://localhost:8080/api/menus
+
+### 3. Șterge meniul creat
+DELETE http://localhost:8080/api/menus/{{createMenu.response.body.id}}
