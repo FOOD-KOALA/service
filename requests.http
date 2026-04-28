@@ -118,3 +118,5 @@ GET http://localhost:8080/api/menus
 
 ### 3. Șterge meniul creat
 DELETE http://localhost:8080/api/menus/{{createMenu.response.body.id}}
+### 4. Gaseste un meniu dupa ID
+GET http://localhost:8080/api/menus/{{createMenu.response.body.id}}

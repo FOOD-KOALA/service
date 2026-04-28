@@ -51,4 +51,11 @@ public class MenuService {
             menu.available()
         );
     }
+    public MenuResponse getMenuById(String id) {
+        MenuEntity entity = menuRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Meniul cu id-ul " + id + " nu a fost gasit"));
+        
+        return toResponse(entity);
+    }
 }
+
