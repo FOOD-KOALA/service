@@ -1,56 +1,104 @@
 pipeline {
     agent any
 
-    // Cerință: Gradle 8 și JDK 21
-    tools {
-        jdk 'jdk21'
-        gradle 'gradle-8'
-    }
-
     environment {
-        // SCHIMBĂ AICI CU USER-UL TĂU DE DOCKER HUB
         DOCKER_USER = 'iustinnc' 
-        
-        // ID-ul credențialului creat de tine în Jenkins
+        // Va lua automat credentialul pe care l-ai setat deja
         DOCKER_PASSWORD = credentials("docker_password")
-        
         IMAGE_NAME = 'food-koala-service'
-        TAG_NAME = "v1.0.${env.BUILD_NUMBER}"
+        // Versiune dinamica (ex: v2.0.15) ca sa nu mai dea eroare de "tag already exists"
+        IMAGE_TAG = "v2.0.${env.BUILD_NUMBER}"
     }
 
     stages {
-        stage('Build & Test') {
+        stage('Build') {
             steps {
-                echo '=== Compilam si Testam ==='
+                echo '=== Compilam aplicatia (fara teste) ==='
                 sh 'chmod +x gradlew'
-                sh './gradlew clean build jacocoTestReport'
+                sh './gradlew assemble'
             }
         }
 
-        stage('Build & Push Docker Image') {
+        stage('Test') {
             steps {
-                echo '=== Construim si urcam imaginea pe Docker Hub ==='
-                sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USER --password-stdin'
-                sh "docker build -t ${DOCKER_USER}/${IMAGE_NAME}:${TAG_NAME} ."
-                sh "docker push ${DOCKER_USER}/${IMAGE_NAME}:${TAG_NAME}"
+                echo '=== Rulam Unit Tests ==='
+                sh './gradlew test -x integrationTest jacocoTestReport'
             }
         }
 
-        stage('Create Git Tag') {
+        stage('Version') {
+            steps {
+                echo "=== Versiunea curenta: ${IMAGE_TAG} ==="
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                echo '=== Construim imaginea Docker ==='
+                sh "docker build -t ${DOCKER_USER}/${IMAGE_NAME}:${IMAGE_TAG} ."
+            }
+        }
+
+        stage('Push') {
+            steps {
+                echo '=== Urcam imaginea pe Docker Hub ==='
+                sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USER --password-stdin'
+                sh "docker push ${DOCKER_USER}/${IMAGE_NAME}:${IMAGE_TAG}"
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                echo '=== Deploy aplicatie via Docker Compose ==='
+                sh """
+                    export IMAGE_TAG=${IMAGE_TAG}
+                    docker compose --profile prod-eng-service --profile mongo down
+                    docker compose --profile prod-eng-service --profile mongo up -d
+                """
+                sleep time: 20, unit: 'SECONDS'
+            }
+        }
+
+        stage('Integration Tests') {
+            steps {
+                echo '=== Rulam testele de integrare ==='
+                sh './gradlew test --tests "*IntegrationTest*"'
+            }
+        }
+
+        stage('Tag') {
             steps {
                 echo '=== Cream un tag pe GitHub ==='
                 script {
-                    // ID-ul credențialului Secret Text creat de tine
                     withCredentials([string(credentialsId: 'github_token', variable: 'GIT_TOKEN')]) {
                         sh """
                             git config user.email "jenkins@foodkoala.com"
                             git config user.name "Jenkins CI"
-                            git tag -a ${TAG_NAME} -m "Release ${TAG_NAME}"
-                            git push https://${GIT_TOKEN}@github.com/FOOD-KOALA/service.git ${TAG_NAME}
+                            git tag -a ${IMAGE_TAG} -m "Release ${IMAGE_TAG}"
+                            git push https://${GIT_TOKEN}@github.com/FOOD-KOALA/service.git ${IMAGE_TAG}
                         """
                     }
                 }
             }
+        }
+    }
+
+    post {
+        always {
+            echo '=== Publicam rapoartele ==='
+            junit 'build/test-results/**/*.xml'
+            
+            publishHTML(target: [
+                allowMissing: true,
+                alwaysLinkToLastBuild: true,
+                keepAll: true,
+                reportDir: 'build/reports/tests/test',
+                reportFiles: 'index.html',
+                reportName: 'HTML Test Report'
+            ])
+            
+            // Oprim aplicatia de test la final
+            sh 'docker compose --profile prod-eng-service --profile mongo down'
         }
     }
 }
