@@ -3,17 +3,15 @@ pipeline {
 
     environment {
         DOCKER_USER = 'iustinnc' 
-        // Va lua automat credentialul pe care l-ai setat deja
         DOCKER_PASSWORD = credentials("docker_password")
         IMAGE_NAME = 'food-koala-service'
-        // Versiune dinamica (ex: v2.0.15) ca sa nu mai dea eroare de "tag already exists"
         IMAGE_TAG = "v2.0.${env.BUILD_NUMBER}"
     }
 
     stages {
         stage('Build') {
             steps {
-                echo '=== Compilam aplicatia (fara teste) ==='
+                echo '=== Compilam aplicatia ==='
                 sh 'chmod +x gradlew'
                 sh './gradlew assemble'
             }
@@ -22,7 +20,6 @@ pipeline {
         stage('Test') {
             steps {
                 echo '=== Rulam Unit Tests ==='
-                // Scoatem -x integrationTest ca sa nu mai planga Gradle
                 sh './gradlew test jacocoTestReport'
             }
         }
@@ -50,11 +47,12 @@ pipeline {
 
         stage('Deploy') {
             steps {
-                echo '=== Deploy aplicatie via Docker Compose ==='
+                echo '=== Deploy DOAR la aplicatie si mongo ==='
                 sh """
                     export IMAGE_TAG=${IMAGE_TAG}
-                    docker compose --profile prod-eng-service --profile mongo down
-                    docker compose --profile prod-eng-service --profile mongo up -d
+                    docker compose stop prod-eng mongo
+                    docker compose rm -f prod-eng mongo
+                    docker compose up -d prod-eng mongo
                 """
                 sleep time: 20, unit: 'SECONDS'
             }
@@ -98,8 +96,8 @@ pipeline {
                 reportName: 'HTML Test Report'
             ])
             
-            // Oprim aplicatia de test la final
-            sh 'docker compose --profile prod-eng-service --profile mongo down'
+            // La final oprim doar aplicatia de test, nu ne mai atingem de Jenkins!
+            sh 'docker compose stop prod-eng mongo'
         }
     }
 }
