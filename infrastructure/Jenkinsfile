@@ -22,7 +22,8 @@ pipeline {
         stage('Test') {
             steps {
                 echo '=== Rulam Unit Tests ==='
-                sh './gradlew test -x integrationTest jacocoTestReport'
+                // Scoatem -x integrationTest ca sa nu mai planga Gradle
+                sh './gradlew test jacocoTestReport'
             }
         }
 
