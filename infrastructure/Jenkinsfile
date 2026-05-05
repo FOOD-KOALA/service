@@ -58,10 +58,11 @@ pipeline {
             }
         }
 
-        stage('Integration Tests') {
+       stage('Integration Tests') {
             steps {
                 echo '=== Rulam testele de integrare ==='
-                sh './gradlew test --tests "*IntegrationTest*"'
+                // Scoatem filtrul vietii, lasam sa ruleze toate testele gasite
+                sh './gradlew test'
             }
         }
 
