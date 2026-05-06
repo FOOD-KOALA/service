@@ -13,12 +13,13 @@ import java.util.NoSuchElementException;
 public class OrderService {
 
     private final OrderRepository orderRepository;
+    private final MetricsService metricsService;
 
-    public OrderService(OrderRepository orderRepository) {
+    public OrderService(OrderRepository orderRepository, MetricsService metricsService) {
         this.orderRepository = orderRepository;
+        this.metricsService = metricsService;
     }
 
-    // 1. Creare comandă (Din Request în Entity)
     public Order createOrder(OrderCreateRequest request) {
         Order order = new Order();
         order.setCustomerId(request.getCustomerId());
@@ -26,31 +27,35 @@ public class OrderService {
         order.setItems(request.getItems());
         order.setTotalPrice(request.getTotalPrice());
         order.setCreatedAt(LocalDateTime.now());
-        order.setStatus("PENDING"); 
+        order.setStatus("PENDING");
 
-        return orderRepository.save(order);
+        Order saved = orderRepository.save(order);
+
+        // METRICA 1 (business) + METRICA 5 (domain-specific)
+        metricsService.recordOrderCreated(request.getItems().size());
+
+        return saved;
     }
 
-    // 2. Obține comandă după ID (Aruncă eroare dacă nu există pt. status 404)
     public Order getOrderById(String id) {
-        return orderRepository.findById(id)
-                .orElseThrow(() -> new NoSuchElementException("Comanda cu ID-ul " + id + " nu exista."));
+        // METRICA 2 (performance) — măsoară cât durează fetch-ul
+        return metricsService.recordOrderFetch(() ->
+            orderRepository.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("Comanda cu ID-ul " + id + " nu exista."))
+        );
     }
 
-    // 3. Obține toate comenzile unui client
     public List<Order> getCustomerOrders(String customerId) {
-        return orderRepository.findByCustomerId(customerId); // Trebuie sa adaugi metoda asta in OrderRepository!
+        return orderRepository.findByCustomerId(customerId);
     }
 
-    // 4. Actualizează statusul comenzii
     public Order updateOrderStatus(String id, String newStatus) {
         Order order = getOrderById(id);
-        
-        // Extra Business Logic: Validăm statusul (doar exemplu)
+
         if (order.getStatus().equals("DELIVERED")) {
             throw new IllegalStateException("Nu poti modifica o comanda deja livrata!");
         }
-        
+
         order.setStatus(newStatus.toUpperCase());
         return orderRepository.save(order);
     }

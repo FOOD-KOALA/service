@@ -1,11 +1,8 @@
 services:
   prod-eng:
-    # MODIFICAREA 1: Am pus imaginea de pe Docker Hub si variabila IMAGE_TAG
     image: iustinnc/food-koala-service:${IMAGE_TAG:-latest}
-    # AM STERS linia "build: ." conform cerintei
     ports:
       - 8080:8080
-      # Port for debug
       - 5005:5005
     environment:
       ENVIRONMENT_NAME: local
@@ -16,7 +13,6 @@ services:
 
   jenkins:
     image: jenkins/jenkins
-    # MODIFICAREA 2: Am adaugat extra_hosts conform cerintei
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:
@@ -57,7 +53,7 @@ services:
       - "mongo"
 
 # MONITORING SERVICES
-  cadvisor: # container metric prometheus exporter
+  cadvisor:
     image: gcr.io/cadvisor/cadvisor:v0.51.0
     container_name: cadvisor
     ports:
@@ -91,7 +87,7 @@ services:
     profiles:
       - "monitoring"
 
-  prometheus: # metrics aggregation and alert definition server (prometheus server)
+  prometheus:
     image: prom/prometheus:v3.1.0
     volumes:
       - ./infrastructure/prometheus/:/etc/prometheus/
@@ -100,28 +96,20 @@ services:
       - "--storage.tsdb.path=/etc/prometheus/durable"
     ports:
       - 9090:9090
-    logging:
-      driver: loki
-      options:
-        loki-url: "http://loki:3100/loki/api/v1/push"
     profiles:
       - "monitoring"
 
-  alertmanager: # alert manager (prometheus)
+  alertmanager:
     image: prom/alertmanager:v0.28.0
     volumes:
       - ./infrastructure/alertmanager/:/config/
     command: --config.file=/config/alertmanager.yml --log.level=debug
     ports:
       - "9093:9093"
-    logging:
-      driver: loki
-      options:
-        loki-url: "http://loki:3100/loki/api/v1/push"
     profiles:
       - "monitoring"
 
-  grafana: # dashboard visualisation tool (metrics & logs)
+  grafana:
     image: grafana/grafana:11.4.0
     volumes:
       - ./infrastructure/grafana/provisioning:/etc/grafana/provisioning
@@ -135,7 +123,7 @@ services:
     profiles:
       - "monitoring"
 
-  wrk-injector-prod-eng-functional: # traffic injector (low)
+  wrk-injector-prod-eng-functional:
     image: mtchavez/docker-wrk
     profiles:
       - "perf"
@@ -145,7 +133,7 @@ services:
       options:
         loki-url: "http://loki:3100/loki/api/v1/push"
 
-  wrk-injector-info-perf: # traffic injector (high)
+  wrk-injector-info-perf:
     image: mtchavez/docker-wrk
     profiles:
       - "perf"
